@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scan QR Ucapan</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="qr-body">
+  <main class="qr-stage">
+    <p class="eyebrow">Coune Labworks</p>
+    <h1>Scan untuk Mengirim Ucapan</h1>
+    <div class="qr-box">
+      <img src="/qr.png" alt="QR code menuju form ucapan">
+    </div>
+    <p class="subtitle">Pindai kode QR untuk mengirim ucapan.</p>
+    <p class="counter"><strong id="counter">-</strong> ucapan terkirim</p>
+  </main>
+  <script>
+    async function refreshCounter() {
+      try {
+        const res = await fetch("/api/stats");
+        const data = await res.json();
+        if (data.ok) document.getElementById("counter").textContent = data.count;
+      } catch (_) {}
+    }
+    refreshCounter();
+    setInterval(refreshCounter, 10000);
+  </script>
+</body>
+</html>

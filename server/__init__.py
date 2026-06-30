@@ -1,0 +1,1 @@
+"""Birthday installation server package."""

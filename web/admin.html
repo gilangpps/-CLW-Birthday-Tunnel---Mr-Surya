@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Submissions</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <main class="container wide">
+    <section class="hero">
+      <p class="eyebrow">Operator Panel</p>
+      <h1>Submission Admin</h1>
+      <p class="subtitle">Preview data, monitor count, and reset when needed.</p>
+    </section>
+
+    <section class="card">
+      <div class="admin-top">
+        <label class="field token-field">
+          <span>Admin Token</span>
+          <input id="adminToken" type="password" placeholder="Token reset">
+        </label>
+        <div class="stat">
+          <strong id="totalCount">-</strong>
+          <span>Total Ucapan</span>
+        </div>
+      </div>
+
+      <div class="admin-actions">
+        <button id="refreshButton" type="button">Refresh</button>
+        <button id="deleteSelectedButton" class="danger" type="button">Delete Selected</button>
+        <button id="resetButton" class="danger" type="button">Reset All</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th><input id="selectAll" type="checkbox" aria-label="Select all"></th>
+              <th>Foto</th>
+              <th>Nama</th>
+              <th>Pesan</th>
+              <th>Waktu</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script src="/js/admin.js"></script>
+</body>
+</html>

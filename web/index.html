@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="theme-color" content="#071426">
+  <title>Mr. Surya Birthday</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <main class="container">
+    <section class="hero">
+      <p class="eyebrow">Kirim Pesanmu!</p>
+      <h1>Selamat Ulang Tahun<br><span>Surya Paloh</span></h1>
+      <p class="subtitle">Kirim ucapan dan foto Anda untuk tampil di instalasi visual.</p>
+      <p class="counter"><strong id="counter">-</strong> ucapan terkirim</p>
+    </section>
+
+    <form class="card" id="submissionForm" novalidate>
+      <div class="alert" id="alert" role="alert"></div>
+
+      <label class="field">
+        <span>Nama Pengirim</span>
+        <input id="name" name="name" type="text" maxlength="80" autocomplete="name" required placeholder="Nama Anda">
+      </label>
+
+      <label class="field">
+        <span>Pesan Ucapan</span>
+        <textarea id="message" name="message" maxlength="280" required placeholder="Tulis ucapan singkat dan hangat..."></textarea>
+        <small><b id="charCount">0</b>/280</small>
+      </label>
+
+      <section class="field">
+        <span>Foto Pengirim</span>
+        <button class="photo-preview" id="photoPreview" type="button">
+          <span class="photo-icon">Camera</span>
+          <span>Ambil foto atau pilih dari galeri</span>
+        </button>
+        <div class="photo-actions">
+          <button type="button" id="cameraButton">Kamera</button>
+          <button type="button" id="galleryButton">Galeri</button>
+        </div>
+        <input id="cameraInput" type="file" accept="image/*" capture="user">
+        <input id="galleryInput" type="file" accept="image/jpeg,image/png,image/webp">
+      </section>
+
+      <button class="submit" id="submitButton" type="submit">Kirim Ucapan</button>
+    </form>
+  </main>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>Mengirim ucapan...</p>
+  </div>
+
+  <script src="/js/form.js"></script>
+</body>
+</html>
