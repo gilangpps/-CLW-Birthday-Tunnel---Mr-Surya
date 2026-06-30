@@ -137,11 +137,23 @@ Admin/operator panel:
 http://localhost:8080/admin
 ```
 
-Output TouchDesigner:
+Documentation screenshots:
 
-![TouchDesigner output preview](docs/img/output-preview.png)
+![QR display page](docs/img/qr.png)
 
-Gambar di atas menunjukkan output preview TouchDesigner: beberapa composed entry card dari `data/cards/` tampil di canvas hitam 1920x1080 melalui fixed `spawner_pool`, `preview_transform_XX`, dan `all_cards_comp`.
+QR display page for the event tablet. Visitors scan this screen to open the local submission form from their phones.
+
+![Visitor submission form](docs/img/dashboard.png)
+
+Visitor submission form. This page collects sender name, birthday message, and photo before the backend stores raw data and composes the 16:9 card.
+
+![TouchDesigner output](docs/img/output.png)
+
+TouchDesigner final output capture. This shows the composed entry cards running on the black 1920x1080 canvas after being pushed from the web server into the fixed `spawner_pool`.
+
+![TouchDesigner output and word cloud preview](docs/img/output-preview.png)
+
+TouchDesigner output preview with the word cloud view. The left side shows animated composed cards, while the right side shows the generated favorite-word cloud from all submitted messages.
 
 ## Backend Flow
 

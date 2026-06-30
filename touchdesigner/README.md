@@ -318,13 +318,19 @@ Screenshots for documentation are stored in:
 docs/img/
 ```
 
-Current output preview:
+Current screenshots:
 
 ```markdown
+![QR display page](../docs/img/qr.png)
+![Visitor submission form](../docs/img/dashboard.png)
+![TouchDesigner output](../docs/img/output.png)
 ![TouchDesigner output preview](../docs/img/output-preview.png)
 ```
 
-This image shows the TouchDesigner preview output where composed 16:9 entry cards are loaded from `data/cards/`, animated through the reusable `spawner_pool`, and composited into `final_out`.
+- `qr.png`: tablet QR screen used by visitors to open the submission form.
+- `dashboard.png`: visitor submission form for sender name, message, and photo upload.
+- `output.png`: TouchDesigner final output capture with composed cards on the black 1920x1080 canvas.
+- `output-preview.png`: TouchDesigner preview showing animated composed cards and the generated favorite-word cloud.
 
 ## Notes
 
