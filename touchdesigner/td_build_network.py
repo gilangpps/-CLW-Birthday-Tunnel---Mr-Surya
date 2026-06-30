@@ -645,8 +645,8 @@ def configure_preview_transform(transform_top, number):
     set_resolution(transform_top, CANVAS_WIDTH, CANVAS_HEIGHT)
     set_par(transform_top, "fillmode", "fit")
     set_par(transform_top, "extend", "zero")
-    set_expression(transform_top, "tx", "max(-0.3, min(0.3, ((op('{}').par.Posx.eval() if op('{}') and hasattr(op('{}').par, 'Posx') else {}) / {}) - 0.5))".format(comp_path, comp_path, comp_path, CANVAS_WIDTH / 2, CANVAS_WIDTH))
-    set_expression(transform_top, "ty", "max(-0.3, min(0.3, 0.5 - ((op('{}').par.Posy.eval() if op('{}') and hasattr(op('{}').par, 'Posy') else {}) / {})))".format(comp_path, comp_path, comp_path, CANVAS_HEIGHT / 2, CANVAS_HEIGHT))
+    set_expression(transform_top, "tx", "max(-0.4, min(0.4, ((op('{}').par.Posx.eval() if op('{}') and hasattr(op('{}').par, 'Posx') else {}) / {}) - 0.5))".format(comp_path, comp_path, comp_path, CANVAS_WIDTH / 2, CANVAS_WIDTH))
+    set_expression(transform_top, "ty", "max(-0.4, min(0.4, 0.5 - ((op('{}').par.Posy.eval() if op('{}') and hasattr(op('{}').par, 'Posy') else {}) / {})))".format(comp_path, comp_path, comp_path, CANVAS_HEIGHT / 2, CANVAS_HEIGHT))
     set_expression(transform_top, "sx", "op('{}').par.Cardsx if op('{}') and hasattr(op('{}').par, 'Cardsx') else 0.1".format(comp_path, comp_path, comp_path))
     set_expression(transform_top, "sy", "op('{}').par.Cardsy if op('{}') and hasattr(op('{}').par, 'Cardsy') else 0.1".format(comp_path, comp_path, comp_path))
 

@@ -21,9 +21,7 @@ except Exception:  # pragma: no cover - fallback keeps event server usable.
 
 WIDTH = 1920
 HEIGHT = 1080
-BACKGROUND = (0, 27, 85)
-ACCENT_YELLOW = (255, 178, 0)
-ACCENT_RED = (255, 0, 0)
+BACKGROUND = (0, 0, 0)
 TEXT_WHITE = (255, 255, 255)
 STOPWORDS = {
     "yang",
@@ -88,19 +86,17 @@ def render_with_wordcloud(frequencies: Counter[str]) -> Image.Image:
         color_func=word_color,
         collocations=True,
         contour_width=0,
-        relative_scaling=0.55,
+        relative_scaling=1.0,
         random_state=2026,
     ).generate_from_frequencies(frequencies)
 
     image = render_background()
     image.alpha_composite(cloud.to_image())
-    draw_title(image)
     return image.convert("RGB")
 
 
 def render_fallback(frequencies: Counter[str]) -> Image.Image:
     image = render_background()
-    draw_title(image)
     draw = ImageDraw.Draw(image, "RGBA")
     font_sizes = [104, 88, 76, 64, 56, 48, 42, 38]
     positions = [
@@ -115,7 +111,7 @@ def render_fallback(frequencies: Counter[str]) -> Image.Image:
     ]
     for index, (word, count) in enumerate(frequencies.most_common(len(positions))):
         font = load_font(font_sizes[min(index, len(font_sizes) - 1)])
-        color = ACCENT_YELLOW if index % 3 == 0 else TEXT_WHITE
+        color = word_palette(index)
         draw.text(positions[index], word, fill=(*color, 235), font=font)
 
     if not frequencies:
@@ -125,23 +121,18 @@ def render_fallback(frequencies: Counter[str]) -> Image.Image:
 
 
 def render_background() -> Image.Image:
-    image = Image.new("RGBA", (WIDTH, HEIGHT), (*BACKGROUND, 255))
-    draw = ImageDraw.Draw(image, "RGBA")
-    draw.rounded_rectangle((90, 90, WIDTH - 90, HEIGHT - 90), radius=56, outline=(*ACCENT_YELLOW, 180), width=5)
-    draw.rectangle((120, 160, WIDTH - 120, 170), fill=(*ACCENT_RED, 200))
-    return image
-
-
-def draw_title(image: Image.Image) -> None:
-    draw = ImageDraw.Draw(image, "RGBA")
-    font = load_font(72)
-    draw.text((140, 110), "TOP UCAPAN", fill=(*TEXT_WHITE, 255), font=font)
+    return Image.new("RGBA", (WIDTH, HEIGHT), (*BACKGROUND, 255))
 
 
 def word_color(*args, **kwargs) -> str:
     palette = ["#ffffff", "#ffb200", "#ff3a2f", "#f7d36a", "#d9e6ff"]
     word = str(args[0]) if args else ""
     return palette[sum(ord(char) for char in word) % len(palette)]
+
+
+def word_palette(index: int) -> tuple[int, int, int]:
+    palette = [(255, 255, 255), (255, 178, 0), (255, 58, 47), (247, 211, 106), (217, 230, 255)]
+    return palette[index % len(palette)]
 
 
 def load_font(size: int):

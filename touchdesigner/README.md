@@ -310,7 +310,7 @@ Check backend count from TouchDesigner:
 op("/project1/build_net").module.diagnoseBirthdayTouchDesigner()
 ```
 
-## Web / QR Preview Screenshots
+## Output Preview Screenshot
 
 Screenshots for documentation are stored in:
 
@@ -318,12 +318,13 @@ Screenshots for documentation are stored in:
 docs/img/
 ```
 
-Current files:
+Current output preview:
 
 ```markdown
-![QR page](../docs/img/qr.png)
-![Dashboard / preview](../docs/img/dashboard.png)
+![TouchDesigner output preview](../docs/img/output-preview.png)
 ```
+
+This image shows the TouchDesigner preview output where composed 16:9 entry cards are loaded from `data/cards/`, animated through the reusable `spawner_pool`, and composited into `final_out`.
 
 ## Notes
 

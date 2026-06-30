@@ -246,7 +246,7 @@ def render_submission_card(photo_data: bytes, name: str, message: str) -> bytes:
 
     title_font = load_font(62, bold=True)
     message_font = fit_font_for_box(draw, message, max_width=690, max_height=380, start_size=58, min_size=34)
-    sender_font = load_font(34, bold=False)
+    sender_font = load_font(40, bold=False)
 
     photo = Image.open(BytesIO(photo_data))
     photo = ImageOps.exif_transpose(photo).convert("RGB")

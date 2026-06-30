@@ -74,7 +74,7 @@ WORDCLOUD_IMAGE_PATH = r"C:\Users\PC\Documents\gilang-stuff\PROJ_TouchDesigner-s
 MAX_ACTIVE_ITEMS = 20
 MAX_DATABASE_ROWS = 500
 POLL_INTERVAL_SECONDS = 1.25
-SHUFFLE_INTERVAL_SECONDS = 60.0
+SHUFFLE_INTERVAL_SECONDS = 5.0
 ITEM_LIFETIME_SECONDS = 180.0
 FADE_IN_SECONDS = 2.0
 FADE_OUT_SECONDS = 4.0
@@ -86,16 +86,16 @@ ENTRY_HEIGHT = 900
 CARD_WIDTH = 320
 CARD_HEIGHT = 180
 NEW_ENTRY_RATIO = 0.75
-FLOW_SPEED_PIXELS_PER_SECOND = 45.0
+FLOW_SPEED_PIXELS_PER_SECOND = 57.0
 RANDOM_DRIFT_PIXELS = 60.0
 TARGET_EASE_PER_SECOND = 0.7
-MIN_CARD_SCALE = 0.15
-MAX_CARD_SCALE = 0.195
-BROWNIAN_DIFFUSION_PIXELS2_PER_SECOND = 14000.0
-BROWNIAN_VELOCITY_DAMPING = 0.985
-BROWNIAN_MAX_SPEED_PIXELS_PER_SECOND = 180.0
+MIN_CARD_SCALE = 0.1
+MAX_CARD_SCALE = 0.125
+BROWNIAN_DIFFUSION_PIXELS2_PER_SECOND = 7845.0
+BROWNIAN_VELOCITY_DAMPING = 1.945
+BROWNIAN_MAX_SPEED_PIXELS_PER_SECOND = 60.0
 COLLISION_PADDING_PIXELS = 36
-COLLISION_ITERATIONS = 4
+COLLISION_ITERATIONS = 6
 COLLISION_STRENGTH = 0.58
 FLOW_TOP_RATIO = 0.2
 FLOW_BOTTOM_RATIO = 0.8
@@ -512,9 +512,12 @@ class BirthdaySpawner:
             return
 
         for _ in range(COLLISION_ITERATIONS):
+            pushes = [[0.0, 0.0] for _ in self.active]
+            impulses = [[0.0, 0.0] for _ in self.active]
             for left_index in range(len(self.active)):
                 left = self.active[left_index]
-                for right in self.active[left_index + 1 :]:
+                for right_index in range(left_index + 1, len(self.active)):
+                    right = self.active[right_index]
                     dx = right.x - left.x
                     dy = right.y - left.y
                     min_x = self.collision_width(left) * 0.5 + self.collision_width(right) * 0.5
@@ -540,23 +543,28 @@ class BirthdaySpawner:
                     push = min(overlap_x, overlap_y) * 0.5 * COLLISION_STRENGTH
                     push_x = nx * push
                     push_y = ny * push
-                    left.x -= push_x
-                    left.y -= push_y
-                    right.x += push_x
-                    right.y += push_y
-                    left.target_x -= push_x * 0.25
-                    left.target_y -= push_y * 0.08
-                    right.target_x += push_x * 0.25
-                    right.target_y += push_y * 0.08
-                    left.vx -= nx * push * 1.8
-                    left.vy -= ny * push * 1.8
-                    right.vx += nx * push * 1.8
-                    right.vy += ny * push * 1.8
-                    self.limit_brownian_speed(left)
-                    self.limit_brownian_speed(right)
+                    pushes[left_index][0] -= push_x
+                    pushes[left_index][1] -= push_y
+                    pushes[right_index][0] += push_x
+                    pushes[right_index][1] += push_y
+                    impulses[left_index][0] -= nx * push * 1.8
+                    impulses[left_index][1] -= ny * push * 1.8
+                    impulses[right_index][0] += nx * push * 1.8
+                    impulses[right_index][1] += ny * push * 1.8
 
-                    self.clamp_item_to_canvas(left)
-                    self.clamp_item_to_canvas(right)
+            for index, item in enumerate(self.active):
+                push_x, push_y = pushes[index]
+                impulse_x, impulse_y = impulses[index]
+                if push_x == 0 and push_y == 0 and impulse_x == 0 and impulse_y == 0:
+                    continue
+                item.x += push_x
+                item.y += push_y
+                item.target_x += push_x * 0.25
+                item.target_y += push_y * 0.08
+                item.vx += impulse_x
+                item.vy += impulse_y
+                self.limit_brownian_speed(item)
+                self.clamp_item_to_canvas(item)
 
     def collision_width(self, item):
         return max(CARD_WIDTH, ENTRY_WIDTH * item.scale) + COLLISION_PADDING_PIXELS

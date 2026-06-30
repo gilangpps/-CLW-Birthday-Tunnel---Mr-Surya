@@ -137,10 +137,11 @@ Admin/operator panel:
 http://localhost:8080/admin
 ```
 
-Optional documentation screenshots can be stored in `docs/img/`, for example:
+Output TouchDesigner:
 
-![QR page](docs/img/qr.png)
-![Dashboard / preview](docs/img/dashboard.png)
+![TouchDesigner output preview](docs/img/output-preview.png)
+
+Gambar di atas menunjukkan output preview TouchDesigner: beberapa composed entry card dari `data/cards/` tampil di canvas hitam 1920x1080 melalui fixed `spawner_pool`, `preview_transform_XX`, dan `all_cards_comp`.
 
 ## Backend Flow
 
