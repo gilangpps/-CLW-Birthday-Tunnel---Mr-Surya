@@ -147,10 +147,6 @@ QR display page for the event tablet. Visitors scan this screen to open the loca
 
 Visitor submission form. This page collects sender name, birthday message, and photo before the backend stores raw data and composes the 16:9 card.
 
-![TouchDesigner output](docs/img/output.png)
-
-TouchDesigner final output capture. This shows the composed entry cards running on the black 1920x1080 canvas after being pushed from the web server into the fixed `spawner_pool`.
-
 ![TouchDesigner output and word cloud preview](docs/img/output-preview.png)
 
 TouchDesigner output preview with the word cloud view. The left side shows animated composed cards, while the right side shows the generated favorite-word cloud from all submitted messages.
