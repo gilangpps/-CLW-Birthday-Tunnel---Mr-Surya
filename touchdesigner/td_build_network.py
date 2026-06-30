@@ -31,6 +31,7 @@ def installBirthdayTouchDesigner():
     template = buildSubmissionTemplate(project)
     ensureGeneratedPoolCopies(controller, template)
     preview = buildPreviewNetwork(project)
+    buildFavoriteWindow(project)
     buildPreviewAutoWire(project)
     buildControlPanel(project)
     startBirthdayRuntime()
@@ -184,7 +185,7 @@ def wireCardsNoTransform():
 
 
 def forceCookPreview():
-    for name in ("preview_bg", "all_cards_comp", "preview_level", "final_out"):
+    for name in ("preview_bg", "all_cards_comp", "preview_level", "final_out", "favorite_wordcloud", "favorite_fit", "favorite_out"):
         force_cook(op("/project1/" + name))
 
     for index in range(1, MAX_PREVIEW_CARDS + 1):
@@ -349,6 +350,7 @@ def buildController(project):
     ensure_table(controller, "queue_table", 180, 0)
     ensure_table(controller, "active_table", 360, 0)
     ensure_table(controller, "stats_table", 540, 0)
+    ensure_table(controller, "favorite_table", 720, 0)
 
     ensure_comp(controller, "spawner_pool", baseCOMP, 0, -180)
 
@@ -643,8 +645,8 @@ def configure_preview_transform(transform_top, number):
     set_resolution(transform_top, CANVAS_WIDTH, CANVAS_HEIGHT)
     set_par(transform_top, "fillmode", "fit")
     set_par(transform_top, "extend", "zero")
-    set_expression(transform_top, "tx", "max(-0.3, min(0.3, (((op('{}').par.Posx.eval() if op('{}') and hasattr(op('{}').par, 'Posx') else {}) / {}) - 0.5) * 0.6))".format(comp_path, comp_path, comp_path, CANVAS_WIDTH / 2, CANVAS_WIDTH))
-    set_expression(transform_top, "ty", "max(-0.3, min(0.3, (((op('{}').par.Posy.eval() if op('{}') and hasattr(op('{}').par, 'Posy') else {}) / {}) - 0.5) * 0.6))".format(comp_path, comp_path, comp_path, CANVAS_HEIGHT / 2, CANVAS_HEIGHT))
+    set_expression(transform_top, "tx", "max(-0.3, min(0.3, ((op('{}').par.Posx.eval() if op('{}') and hasattr(op('{}').par, 'Posx') else {}) / {}) - 0.5))".format(comp_path, comp_path, comp_path, CANVAS_WIDTH / 2, CANVAS_WIDTH))
+    set_expression(transform_top, "ty", "max(-0.3, min(0.3, 0.5 - ((op('{}').par.Posy.eval() if op('{}') and hasattr(op('{}').par, 'Posy') else {}) / {})))".format(comp_path, comp_path, comp_path, CANVAS_HEIGHT / 2, CANVAS_HEIGHT))
     set_expression(transform_top, "sx", "op('{}').par.Cardsx if op('{}') and hasattr(op('{}').par, 'Cardsx') else 0.1".format(comp_path, comp_path, comp_path))
     set_expression(transform_top, "sy", "op('{}').par.Cardsy if op('{}') and hasattr(op('{}').par, 'Cardsy') else 0.1".format(comp_path, comp_path, comp_path))
 
@@ -658,6 +660,39 @@ def cleanLegacyPreviewNodes(project):
                     node.destroy()
                 except Exception:
                     pass
+
+
+def buildFavoriteWindow(project):
+    wordcloud = ensure_photo_loader(project, "favorite_wordcloud", -220, -900)
+    fit = ensure_top(project, "favorite_fit", fitTOP, 0, -900)
+    out = ensure_top(project, "favorite_out", nullTOP, 220, -900)
+    window = ensure_comp(project, "favorite_window", windowCOMP, 420, -900)
+
+    wordcloud_path = str(PROJECT_ROOT / "data" / "wordcloud" / "favorite_wordcloud.png").replace("\\", "/")
+    for par_name in ("file", "filename", "image"):
+        set_par(wordcloud, par_name, wordcloud_path)
+
+    set_par(fit, "fit", "fit")
+    set_par(fit, "justifyx", "center")
+    set_par(fit, "justifyy", "center")
+    set_resolution(wordcloud, CANVAS_WIDTH, CANVAS_HEIGHT)
+    set_resolution(fit, CANVAS_WIDTH, CANVAS_HEIGHT)
+    set_resolution(out, CANVAS_WIDTH, CANVAS_HEIGHT)
+
+    connect(fit, wordcloud, 0)
+    connect(out, fit, 0)
+
+    try:
+        window.par.operator = out.path
+    except Exception:
+        pass
+
+    try:
+        window.par.winopen.pulse()
+    except Exception:
+        pass
+
+    return out
 
 
 def configure_entry_layout_transform(transform_top, tx, ty, sx, sy):

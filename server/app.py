@@ -10,7 +10,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 import qrcode
 from flask import Flask, abort, jsonify, request, send_file, send_from_directory
 
-from config import ADMIN_TOKEN, CARDS_DIR, HOST, IMAGES_DIR, PORT, WEB_DIR
+from config import ADMIN_TOKEN, CARDS_DIR, HOST, IMAGES_DIR, PORT, WEB_DIR, WORDCLOUD_FILE
 from osc_notify import notify_submission, osc_status
 from storage import (
     all_submissions,
@@ -29,6 +29,7 @@ from storage import (
     submissions_since,
 )
 from validation import validate_image, validate_message, validate_name
+from wordcloud_render import render_wordcloud
 
 app = Flask(__name__, static_folder=str(WEB_DIR), static_url_path="")
 
@@ -91,6 +92,13 @@ def qr_png():
     return send_file(buffer, mimetype="image/png")
 
 
+@app.route("/wordcloud.png")
+def wordcloud_png():
+    if not WORDCLOUD_FILE.exists():
+        render_wordcloud(all_submissions())
+    return send_file(WORDCLOUD_FILE, mimetype="image/png")
+
+
 @app.route("/api/submit", methods=["POST"])
 def submit():
     name_ok, name, name_error = validate_name(request.form.get("name", ""))
@@ -127,6 +135,7 @@ def submit():
         "device": (request.form.get("device_info", "") or "")[:200],
     }
     append_submission(record)
+    render_wordcloud(all_submissions())
     osc_sent = notify_submission(record)
 
     return jsonify(
@@ -175,6 +184,7 @@ def api_reset():
     if request.headers.get("X-Admin-Token", "") != ADMIN_TOKEN:
         return jsonify({"ok": False, "error": "Unauthorized"}), 401
     reset_submissions()
+    render_wordcloud([])
     return jsonify({"ok": True, "message": "All submissions cleared."})
 
 
@@ -189,6 +199,7 @@ def api_delete_selected():
         return jsonify({"ok": False, "error": "ids must be a list"}), 400
 
     deleted = delete_submissions(ids)
+    render_wordcloud(all_submissions())
     return jsonify(
         {
             "ok": True,
@@ -384,6 +395,7 @@ def text_height(draw: ImageDraw.ImageDraw, text: str, font) -> int:
 
 if __name__ == "__main__":
     ensure_dirs()
+    render_wordcloud(all_submissions())
     logger.info("Starting server on %s:%s", HOST, PORT)
     print("")
     print(f"Birthday server running on http://localhost:{PORT}")

@@ -44,6 +44,7 @@ import json
 import math
 from pathlib import Path
 import random
+import re
 import shutil
 import time
 from urllib.parse import urlencode
@@ -65,6 +66,10 @@ DATABASE_TABLE = "database_table"
 QUEUE_TABLE = "queue_table"
 ACTIVE_TABLE = "active_table"
 STATS_TABLE = "stats_table"
+FAVORITE_TABLE = "favorite_table"
+FAVORITE_TEXT_PATH = "/project1/favorite_text"
+FAVORITE_WORDCLOUD_PATH = "/project1/favorite_wordcloud"
+WORDCLOUD_IMAGE_PATH = r"C:\Users\PC\Documents\gilang-stuff\PROJ_TouchDesigner-stuff\HBD-SuRyA-PaLoH\data\wordcloud\favorite_wordcloud.png"
 
 MAX_ACTIVE_ITEMS = 20
 MAX_DATABASE_ROWS = 500
@@ -81,11 +86,43 @@ ENTRY_HEIGHT = 900
 CARD_WIDTH = 320
 CARD_HEIGHT = 180
 NEW_ENTRY_RATIO = 0.75
-FLOW_SPEED_PIXELS_PER_SECOND = 25.0
+FLOW_SPEED_PIXELS_PER_SECOND = 45.0
 RANDOM_DRIFT_PIXELS = 60.0
 TARGET_EASE_PER_SECOND = 0.7
-MIN_CARD_SCALE = 0.1
-MAX_CARD_SCALE = 0.13
+MIN_CARD_SCALE = 0.15
+MAX_CARD_SCALE = 0.195
+BROWNIAN_DIFFUSION_PIXELS2_PER_SECOND = 14000.0
+BROWNIAN_VELOCITY_DAMPING = 0.985
+BROWNIAN_MAX_SPEED_PIXELS_PER_SECOND = 180.0
+COLLISION_PADDING_PIXELS = 36
+COLLISION_ITERATIONS = 4
+COLLISION_STRENGTH = 0.58
+FLOW_TOP_RATIO = 0.2
+FLOW_BOTTOM_RATIO = 0.8
+FAVORITE_WORD_LIMIT = 8
+FAVORITE_MIN_WORD_LENGTH = 4
+WORDCLOUD_RELOAD_SECONDS = 2.0
+FAVORITE_STOPWORDS = {
+    "yang",
+    "dan",
+    "dari",
+    "untuk",
+    "dengan",
+    "semoga",
+    "selamat",
+    "ulang",
+    "tahun",
+    "bapak",
+    "pak",
+    "ibu",
+    "the",
+    "and",
+    "for",
+    "you",
+    "your",
+    "wish",
+    "wishes",
+}
 
 
 @dataclass
@@ -167,6 +204,8 @@ class ActiveItem:
     target_y: float = 0.0
     target_z: float = 0.0
     target_scale: float = 1.0
+    vx: float = 0.0
+    vy: float = 0.0
 
     @property
     def id(self):
@@ -193,6 +232,7 @@ class BirthdaySpawner:
         self.last_error = ""
         self.last_sync_status = "waiting"
         self.last_update_time = time.time()
+        self.last_wordcloud_reload = 0.0
 
     # ------------------------------------------------------------------
     # Main loop
@@ -431,9 +471,13 @@ class BirthdaySpawner:
 
         if hard:
             item.x = item.target_x
-            item.y = CANVAS_HEIGHT + CARD_HEIGHT + random.uniform(0, 280)
+            item.y = random.uniform(self.flow_top_y(), self.flow_bottom_y())
             item.z = item.target_z
             item.scale = item.target_scale
+            angle = random.uniform(0, math.tau)
+            speed = random.uniform(BROWNIAN_MAX_SPEED_PIXELS_PER_SECOND * 0.35, BROWNIAN_MAX_SPEED_PIXELS_PER_SECOND * 0.75)
+            item.vx = math.cos(angle) * speed
+            item.vy = math.sin(angle) * speed
 
     def update_active_items(self):
         now = time.time()
@@ -448,27 +492,124 @@ class BirthdaySpawner:
             fade_out = min(1.0, max(0.0, remaining / FADE_OUT_SECONDS))
             item.opacity = max(0.0, min(1.0, fade_in, fade_out))
 
-            item.x += (item.target_x - item.x) * ease
-            item.y -= FLOW_SPEED_PIXELS_PER_SECOND * dt
-            item.y += (item.target_y - item.y) * ease
+            velocity_sigma = math.sqrt(2.0 * BROWNIAN_DIFFUSION_PIXELS2_PER_SECOND * dt)
+            item.vx = (item.vx * BROWNIAN_VELOCITY_DAMPING) + random.gauss(0.0, velocity_sigma)
+            item.vy = (item.vy * BROWNIAN_VELOCITY_DAMPING) + random.gauss(0.0, velocity_sigma)
+            self.limit_brownian_speed(item)
+            item.x += item.vx * dt
+            item.y += item.vy * dt
             item.z += (item.target_z - item.z) * ease
             item.scale += (item.target_scale - item.scale) * ease
+            self.reflect_brownian_bounds(item)
 
-            if item.y < -CARD_HEIGHT * 0.6:
-                item.y = CANVAS_HEIGHT + CARD_HEIGHT
-                item.target_y = random.uniform(CARD_HEIGHT, CANVAS_HEIGHT - CARD_HEIGHT)
-                item.target_x = random.uniform(CARD_WIDTH, CANVAS_WIDTH - CARD_WIDTH)
+        self.resolve_card_collisions()
 
-            if random.random() < 0.002:
-                item.target_x = max(
-                    CARD_WIDTH * 0.5,
-                    min(
-                        CANVAS_WIDTH - CARD_WIDTH * 0.5,
-                        item.target_x + random.uniform(-RANDOM_DRIFT_PIXELS, RANDOM_DRIFT_PIXELS),
-                    ),
-                )
-
+        for item in self.active:
             self.apply_item_to_comp(item)
+
+    def resolve_card_collisions(self):
+        if len(self.active) < 2:
+            return
+
+        for _ in range(COLLISION_ITERATIONS):
+            for left_index in range(len(self.active)):
+                left = self.active[left_index]
+                for right in self.active[left_index + 1 :]:
+                    dx = right.x - left.x
+                    dy = right.y - left.y
+                    min_x = self.collision_width(left) * 0.5 + self.collision_width(right) * 0.5
+                    min_y = self.collision_height(left) * 0.5 + self.collision_height(right) * 0.5
+
+                    overlap_x = min_x - abs(dx)
+                    overlap_y = min_y - abs(dy)
+                    if overlap_x <= 0 or overlap_y <= 0:
+                        continue
+
+                    distance = math.sqrt((dx * dx) + (dy * dy))
+                    if distance < 0.001:
+                        angle = (left.slot + right.slot + 1) * 1.618
+                        nx = math.cos(angle)
+                        ny = math.sin(angle)
+                    else:
+                        nx = dx / distance
+                        ny = dy / distance
+
+                    # Push along the center-to-center vector using the smaller
+                    # rectangular overlap as magnitude; this looks more like a
+                    # soft collision than snapping on only one axis.
+                    push = min(overlap_x, overlap_y) * 0.5 * COLLISION_STRENGTH
+                    push_x = nx * push
+                    push_y = ny * push
+                    left.x -= push_x
+                    left.y -= push_y
+                    right.x += push_x
+                    right.y += push_y
+                    left.target_x -= push_x * 0.25
+                    left.target_y -= push_y * 0.08
+                    right.target_x += push_x * 0.25
+                    right.target_y += push_y * 0.08
+                    left.vx -= nx * push * 1.8
+                    left.vy -= ny * push * 1.8
+                    right.vx += nx * push * 1.8
+                    right.vy += ny * push * 1.8
+                    self.limit_brownian_speed(left)
+                    self.limit_brownian_speed(right)
+
+                    self.clamp_item_to_canvas(left)
+                    self.clamp_item_to_canvas(right)
+
+    def collision_width(self, item):
+        return max(CARD_WIDTH, ENTRY_WIDTH * item.scale) + COLLISION_PADDING_PIXELS
+
+    def collision_height(self, item):
+        return max(CARD_HEIGHT, ENTRY_HEIGHT * item.scale) + COLLISION_PADDING_PIXELS
+
+    def clamp_item_to_canvas(self, item):
+        half_w = self.collision_width(item) * 0.5
+        item.x = max(half_w, min(CANVAS_WIDTH - half_w, item.x))
+        item.y = max(self.flow_top_y(), min(self.flow_bottom_y(), item.y))
+        item.target_x = max(half_w, min(CANVAS_WIDTH - half_w, item.target_x))
+        item.target_y = max(self.flow_top_y(), min(self.flow_bottom_y(), item.target_y))
+
+    def reflect_brownian_bounds(self, item):
+        half_w = self.collision_width(item) * 0.5
+        min_x = half_w
+        max_x = CANVAS_WIDTH - half_w
+        min_y = self.flow_top_y()
+        max_y = self.flow_bottom_y()
+
+        if item.x < min_x:
+            item.x = min_x + (min_x - item.x)
+            item.vx = abs(item.vx)
+        elif item.x > max_x:
+            item.x = max_x - (item.x - max_x)
+            item.vx = -abs(item.vx)
+
+        if item.y < min_y:
+            item.y = min_y + (min_y - item.y)
+            item.vy = abs(item.vy)
+        elif item.y > max_y:
+            item.y = max_y - (item.y - max_y)
+            item.vy = -abs(item.vy)
+
+        item.x = max(min_x, min(max_x, item.x))
+        item.y = max(min_y, min(max_y, item.y))
+        item.target_x = item.x
+        item.target_y = item.y
+
+    def limit_brownian_speed(self, item):
+        speed = math.sqrt((item.vx * item.vx) + (item.vy * item.vy))
+        if speed <= BROWNIAN_MAX_SPEED_PIXELS_PER_SECOND or speed <= 0:
+            return
+        scale = BROWNIAN_MAX_SPEED_PIXELS_PER_SECOND / speed
+        item.vx *= scale
+        item.vy *= scale
+
+    def flow_top_y(self):
+        return CANVAS_HEIGHT * FLOW_TOP_RATIO
+
+    def flow_bottom_y(self):
+        return CANVAS_HEIGHT * FLOW_BOTTOM_RATIO
 
     # ------------------------------------------------------------------
     # Pool spawner
@@ -736,6 +877,7 @@ class BirthdaySpawner:
         self.write_queue_table()
         self.write_active_table()
         self.write_stats_table()
+        self.write_favorite_table()
 
     def write_database_table(self):
         table = self.safe_op(DATABASE_TABLE)
@@ -827,6 +969,46 @@ class BirthdaySpawner:
         table.appendRow(["last_id", self.last_id])
         table.appendRow(["last_sync_status", self.last_sync_status])
         table.appendRow(["last_error", self.last_error])
+
+    def write_favorite_table(self):
+        favorites = self.favorite_words()
+        table = self.safe_op(FAVORITE_TABLE)
+        if table:
+            table.clear()
+            table.appendRow(["rank", "word", "count"])
+            for rank, item in enumerate(favorites, start=1):
+                table.appendRow([rank, item[0], item[1]])
+
+        self.update_favorite_wordcloud()
+
+    def update_favorite_wordcloud(self):
+        now = time.time()
+        if now - self.last_wordcloud_reload < WORDCLOUD_RELOAD_SECONDS:
+            return
+        self.last_wordcloud_reload = now
+
+        wordcloud_top = self.safe_op(FAVORITE_WORDCLOUD_PATH)
+        if not wordcloud_top:
+            return
+
+        normalized = WORDCLOUD_IMAGE_PATH.replace("\\", "/")
+        self.set_par(wordcloud_top, "file", normalized)
+        self.set_par(wordcloud_top, "filename", normalized)
+        self.set_par(wordcloud_top, "image", normalized)
+        self.pulse_par(wordcloud_top, "reload")
+        self.pulse_par(wordcloud_top, "reloadpulse")
+        self.force_cook(wordcloud_top)
+
+    def favorite_words(self):
+        counts = {}
+        for submission in self.database:
+            for word in re.findall(r"[A-Za-zÀ-ÿ0-9]+", submission.message.lower()):
+                if len(word) < FAVORITE_MIN_WORD_LENGTH or word in FAVORITE_STOPWORDS:
+                    continue
+                counts[word] = counts.get(word, 0) + 1
+
+        ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+        return ranked[:FAVORITE_WORD_LIMIT]
 
     # ------------------------------------------------------------------
     # TouchDesigner lookup helpers

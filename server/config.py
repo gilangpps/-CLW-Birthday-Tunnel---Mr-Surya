@@ -8,6 +8,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
 IMAGES_DIR = DATA_DIR / "images"
 CARDS_DIR = DATA_DIR / "cards"
+WORDCLOUD_DIR = DATA_DIR / "wordcloud"
+WORDCLOUD_FILE = WORDCLOUD_DIR / "favorite_wordcloud.png"
 LOGS_DIR = DATA_DIR / "logs"
 SUBMISSIONS_FILE = DATA_DIR / "submissions.json"
 

@@ -3,3 +3,4 @@ Pillow>=9.1.0
 qrcode[pil]>=7.4.0
 waitress>=3.0.0
 python-osc>=1.9.0
+wordcloud>=1.9.3

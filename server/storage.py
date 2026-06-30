@@ -8,7 +8,10 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from config import CARDS_DIR, DATA_DIR, IMAGES_DIR, LOGS_DIR, SUBMISSIONS_FILE, TIMEZONE_OFFSET_HOURS
+try:
+    from config import CARDS_DIR, DATA_DIR, IMAGES_DIR, LOGS_DIR, SUBMISSIONS_FILE, TIMEZONE_OFFSET_HOURS, WORDCLOUD_DIR
+except ModuleNotFoundError:
+    from .config import CARDS_DIR, DATA_DIR, IMAGES_DIR, LOGS_DIR, SUBMISSIONS_FILE, TIMEZONE_OFFSET_HOURS, WORDCLOUD_DIR
 
 LOCK = threading.Lock()
 LOCAL_TZ = timezone(timedelta(hours=TIMEZONE_OFFSET_HOURS))
@@ -18,6 +21,7 @@ def ensure_dirs() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     IMAGES_DIR.mkdir(parents=True, exist_ok=True)
     CARDS_DIR.mkdir(parents=True, exist_ok=True)
+    WORDCLOUD_DIR.mkdir(parents=True, exist_ok=True)
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
     if not SUBMISSIONS_FILE.exists():
         SUBMISSIONS_FILE.write_text("[]\n", encoding="utf-8")
